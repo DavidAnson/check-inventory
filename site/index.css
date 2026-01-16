@@ -1,3 +1,7 @@
 html {
   background-color: lightgray;
 }
+
+input[type=text], textarea {
+  width: 500px;
+}
