@@ -1,6 +1,28 @@
-function onCheck() {
-  const url = document.getElementById("url");
-  const productUrl = new URL(`https://cors-header-proxy.dlaa.workers.dev/corsproxy/?apiurl=${url.value}`);
+const vendor = {
+  productSkuSelector: "div.product-number span",
+  productNameSelector: "h1.product-name",
+  productColorSelector: "div.color-attribute span.selected-value",
+  productInStockSelector: "div.size-attribute li.selectable span.swatchanchor-text",
+  productSoldOutSelector: "div.size-attribute li.unselectable span.swatchanchor-text",
+};
+
+const checkElement = document.getElementById("check");
+const outputElement = document.getElementById("output");
+const progressElement = document.getElementById("progress");
+const urlElement = document.getElementById("url");
+
+function logMessage(message) {
+  outputElement.textContent = message;
+}
+
+function setProgress(value) {
+  progress.value = value;
+}
+
+function onCheckInventory() {
+  setProgress(0.5);
+  logMessage("Loading...");
+  const productUrl = new URL(`https://cors-header-proxy.dlaa.workers.dev/corsproxy/?apiurl=${urlElement.value}`);
   fetch(productUrl).
     then((response) => {
       if (!response.ok) {
@@ -9,15 +31,15 @@ function onCheck() {
       return response.text();
     }).
     then((responseText) => {
-      const result = [ "SKU,Name,Color,Size,Availability"];
+      const result = [ "SKU,Name,Color,Size,Availability" ];
       const domParser = new DOMParser();
       const productDocument = domParser.parseFromString(responseText, "text/html");
-      const productSKU = productDocument.querySelector("div.product-number span").textContent.trim();
-      const productName = productDocument.querySelector("h1.product-name").textContent.trim();
-      const productColor = productDocument.querySelector("div.color-attribute span.selected-value").textContent.trim();
+      const productSKU = productDocument.querySelector(vendor.productSkuSelector).textContent.trim();
+      const productName = productDocument.querySelector(vendor.productNameSelector).textContent.trim();
+      const productColor = productDocument.querySelector(vendor.productColorSelector).textContent.trim();
       const queries = [
-        [ "in-stock", "div.size-attribute li.selectable span.swatchanchor-text" ],
-        [ "sold-out", "div.size-attribute li.unselectable span.swatchanchor-text" ]
+        [ "in-stock", vendor.productInStockSelector ],
+        [ "sold-out", vendor.productSoldOutSelector ]
       ]
       for (const [ availability, selector ] of queries) {
         for (const sizeElement of productDocument.querySelectorAll(selector)) {
@@ -28,7 +50,13 @@ function onCheck() {
       return result.join("\n");
     }).
     catch((error) => error.message || error).
-    then((result) => document.getElementById("output").textContent = result)
+    then(logMessage).
+    then(() => setProgress(1));
 }
 
-document.getElementById("check").onclick = onCheck;
+urlElement.onkeydown = (event) => {
+  if (event.key === "Enter") {
+    onCheckInventory();
+  }
+};
+checkElement.onclick = onCheckInventory;
