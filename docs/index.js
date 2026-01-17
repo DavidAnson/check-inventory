@@ -1,6 +1,6 @@
 function onCheck() {
   const url = document.getElementById("url");
-  const productUrl = new URL(`https://cors-anywhere.herokuapp.com/${url.value}`);
+  const productUrl = new URL(`https://cors-header-proxy.dlaa.workers.dev/corsproxy/?apiurl=${url.value}`);
   fetch(productUrl).
     then((response) => {
       if (!response.ok) {
