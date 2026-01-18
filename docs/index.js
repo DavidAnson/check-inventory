@@ -2,6 +2,7 @@ const vendor = {
   productSkuSelector: "div.product-number span",
   productNameSelector: "h1.product-name",
   productColorSelector: "div.color-attribute span.selected-value",
+  productVariantSelector: "div.color-attribute li.variation-value:not(.selected) span.swatchanchor",
   productInStockSelector: "div.size-attribute li.selectable span.swatchanchor-text",
   productSoldOutSelector: "div.size-attribute li.unselectable span.swatchanchor-text",
 };
@@ -11,7 +12,7 @@ const outputElement = document.getElementById("output");
 const progressElement = document.getElementById("progress");
 const urlElement = document.getElementById("url");
 
-function logMessage(message) {
+function setOutput(message) {
   outputElement.textContent = message;
 }
 
@@ -19,11 +20,9 @@ function setProgress(value) {
   progress.value = value;
 }
 
-function onCheckInventory() {
-  setProgress(0.5);
-  logMessage("Loading...");
-  const productUrl = new URL(`https://cors-header-proxy.dlaa.workers.dev/corsproxy/?apiurl=${urlElement.value}`);
-  fetch(productUrl).
+function checkProductPage(productUrls, index, resultLines) {
+  const { productUrl, isVariant } = productUrls[index];
+  return fetch(new URL(`https://cors-header-proxy.dlaa.workers.dev/corsproxy/?apiurl=${productUrl}`)).
     then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -31,7 +30,6 @@ function onCheckInventory() {
       return response.text();
     }).
     then((responseText) => {
-      const result = [ "SKU,Name,Color,Size,Availability" ];
       const domParser = new DOMParser();
       const productDocument = domParser.parseFromString(responseText, "text/html");
       const productSKU = productDocument.querySelector(vendor.productSkuSelector).textContent.trim();
@@ -44,14 +42,34 @@ function onCheckInventory() {
       for (const [ availability, selector ] of queries) {
         for (const sizeElement of productDocument.querySelectorAll(selector)) {
           const productSize = sizeElement.textContent.trim();
-          result.push(`"${productSKU}","${productName}","${productColor}","${productSize}","${availability}"`);
+          resultLines.push(`"${productSKU}","${productName}","${productColor}","${productSize}","${availability}"`);
         }
       }
-      return result.join("\n");
-    }).
-    catch((error) => error.message || error).
-    then(logMessage).
-    then(() => setProgress(1));
+      if (!isVariant) {
+        for (const productVariant of productDocument.querySelectorAll(vendor.productVariantSelector)) {
+          productUrls.push({ "productUrl": new URL(productVariant.dataset.swatchProductUrl), "isVariant": true });
+        }
+      }
+    });
+}
+
+async function onCheckInventory() {
+  setOutput("Loading...");
+  const productUrls = [];
+  productUrls.push({ "productUrl": new URL(urlElement.value), "isVariant": false });
+  const resultLines = [ "SKU,Name,Color,Size,Availability" ];
+  let output = "";
+  try {
+    for (let index = 0; index < productUrls.length; index++) {
+      setProgress((index + 0.5) / productUrls.length);
+      await checkProductPage(productUrls, index, resultLines);
+    }
+    output = resultLines.join("\n");
+  } catch (error) {
+    output = error.message || error.toString();
+  }
+  setOutput(output);
+  setProgress(1);
 }
 
 urlElement.onkeydown = (event) => {
