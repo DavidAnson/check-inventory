@@ -32,6 +32,11 @@ function setDownload(content) {
   }
 }
 
+function enableInput(enabled) {
+  checkElement.disabled = !enabled;
+  urlElement.disabled = !enabled;
+}
+
 function checkProductPage(productUrls, index, resultLines) {
   const { productUrl, isVariant } = productUrls[index];
   setOutput(`${productUrl}...`);
@@ -75,23 +80,32 @@ function checkProductPage(productUrls, index, resultLines) {
 }
 
 async function onCheckInventory() {
-  setOutput("Loading...");
-  const productUrls = [];
-  productUrls.push({ "productUrl": new URL(urlElement.value), "isVariant": false });
-  const resultLines = [ "SKU,Name,Color,Size,Availability" ];
-  let output = "";
-  try {
-    for (let index = 0; index < productUrls.length; index++) {
-      setProgress((index + 0.5) / productUrls.length);
-      await checkProductPage(productUrls, index, resultLines);
+  enableInput(false);
+  setDownload();
+  setProgress(0);
+  const productURL = URL.parse(urlElement.value);
+  if (productURL) {
+    setOutput("Loading...");
+    const productUrls = [];
+    productUrls.push({ "productUrl": productURL, "isVariant": false });
+    const resultLines = [ "SKU,Name,Color,Size,Availability" ];
+    let output = "";
+    try {
+      for (let index = 0; index < productUrls.length; index++) {
+        setProgress((index + 0.5) / productUrls.length);
+        await checkProductPage(productUrls, index, resultLines);
+      }
+      output = resultLines.join("\n");
+    } catch (error) {
+      output = error.message || error.toString();
     }
-    output = resultLines.join("\n");
-  } catch (error) {
-    output = error.message || error.toString();
+    setOutput(output);
+    setDownload(output);
+    setProgress(1);
+  } else {
+    setOutput("Invalid URL")
   }
-  setOutput(output);
-  setDownload(output);
-  setProgress(1);
+  enableInput(true);
 }
 
 urlElement.onkeydown = (event) => {

@@ -2,8 +2,10 @@ html {
   background-color: lightgray;
 }
 
-input, textarea {
-  width: 500px;
+input, progress, textarea {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 500px;
 }
 
 .hidden {
