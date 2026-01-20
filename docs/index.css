@@ -2,6 +2,10 @@ html {
   background-color: lightgray;
 }
 
-input[type=text], textarea {
+input, textarea {
   width: 500px;
+}
+
+.hidden {
+  display: none;
 }

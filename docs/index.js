@@ -9,6 +9,7 @@ const vendor = {
 };
 
 const checkElement = document.getElementById("check");
+const downloadElement = document.getElementById("download");
 const outputElement = document.getElementById("output");
 const progressElement = document.getElementById("progress");
 const urlElement = document.getElementById("url");
@@ -21,6 +22,14 @@ function setOutput(message) {
 
 function setProgress(value) {
   progress.value = value;
+}
+
+function setDownload(content) {
+  downloadElement.classList.add("hidden");
+  if (content) {
+    downloadElement.href = `data:text/csv,${encodeURI(content)}`;
+    downloadElement.classList.remove("hidden");
+  }
 }
 
 function checkProductPage(productUrls, index, resultLines) {
@@ -81,6 +90,7 @@ async function onCheckInventory() {
     output = error.message || error.toString();
   }
   setOutput(output);
+  setDownload(output);
   setProgress(1);
 }
 
@@ -90,3 +100,4 @@ urlElement.onkeydown = (event) => {
   }
 };
 checkElement.onclick = onCheckInventory;
+setDownload();

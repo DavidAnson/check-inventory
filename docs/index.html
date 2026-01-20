@@ -10,16 +10,19 @@
   <h1>check-inventory</h1>
 
   <p>
-    <input id="url" type="text" placeholder="Product URL"/>
+    <input id="url" type="text" placeholder="Product URL" autofocus/>
   </p>
   <p>
-    <input id="check" type="button" value="Check Inventory"/>
+    <button id="check">Check Inventory</button>
   </p>
   <p>
     <progress id="progress" value="0"/>
   </p>
   <p>
     <textarea id="output" rows="10" readonly></textarea>
+  </p>
+  <p>
+    <a id="download" download="inventory.csv">Download CSV</a>
   </p>
 
   <script src="index.js"></script>
